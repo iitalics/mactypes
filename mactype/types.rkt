@@ -84,7 +84,7 @@
  ;; type when passed to eval-syntax.
  ;; NOTE: this is used to send a type to a phase-1 template to be
  ;; later evaluated (by Racket, **not** by eval-type!!)
- ;type->expression
+ type->expression
 
  )
 
@@ -125,9 +125,21 @@
   (match t
     [(concrete-type id args)
      ((meta-type-formatter (meta-type-of t)) t)]
-    [_ (raise-argument-error 'type->str "type?" t)]))
+    [_
+     (raise-argument-error 'type->str "type?" t)]))
 
-;;; type evaluation
+;;; type evaluation or synthesis
+
+(define (type->expression t)
+  (match t
+    [(concrete-type id args)
+     (with-syntax ([X id] [[arg ...] (map type->expression args)])
+     #`(make-prefab-struct '(concrete-type type 0)
+                           (quote-syntax X)
+                           (list arg ...)))]
+    [_
+     (raise-argument-error 'type->str "type?" t)]))
+
 
 (module typequote racket/base
   (provide (all-defined-out))
